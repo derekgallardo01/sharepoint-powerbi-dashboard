@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI Dashboard - SharePoint Embedded View</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; background: #f3f2f1; }
+        .fluent-blue { background-color: #0078d4; }
+        .fluent-dark { background-color: #323130; }
+        .sp-header { background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%); }
+        .bar { transition: height 0.3s ease; }
+        .donut-ring { fill: none; stroke-width: 3; }
+        .kpi-card { transition: box-shadow 0.2s ease; }
+        .kpi-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .filter-dropdown { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- SharePoint Header -->
+    <header class="sp-header text-white h-12 flex items-center px-4 shadow-md z-50 relative">
+        <div class="flex items-center gap-4 w-full">
+            <!-- Waffle menu -->
+            <button class="hover:bg-white/20 p-1.5 rounded">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+                    <rect x="1" y="1" width="4" height="4" rx="0.5"/>
+                    <rect x="8" y="1" width="4" height="4" rx="0.5"/>
+                    <rect x="15" y="1" width="4" height="4" rx="0.5"/>
+                    <rect x="1" y="8" width="4" height="4" rx="0.5"/>
+                    <rect x="8" y="8" width="4" height="4" rx="0.5"/>
+                    <rect x="15" y="8" width="4" height="4" rx="0.5"/>
+                    <rect x="1" y="15" width="4" height="4" rx="0.5"/>
+                    <rect x="8" y="15" width="4" height="4" rx="0.5"/>
+                    <rect x="15" y="15" width="4" height="4" rx="0.5"/>
+                </svg>
+            </button>
+            <span class="font-semibold text-sm">SharePoint</span>
+            <span class="text-white/60 text-sm mx-1">|</span>
+            <span class="text-sm text-white/90">Contoso IT Operations</span>
+
+            <!-- Search bar -->
+            <div class="flex-1 max-w-xl mx-8">
+                <div class="relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" placeholder="Search this site" class="w-full bg-white/15 border border-white/20 rounded text-sm text-white placeholder-white/50 py-1.5 pl-10 pr-4 focus:outline-none focus:bg-white/25 focus:border-white/40">
+                </div>
+            </div>
+
+            <!-- Right side -->
+            <div class="flex items-center gap-3">
+                <button class="hover:bg-white/20 p-1.5 rounded">
+                    <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                </button>
+                <button class="hover:bg-white/20 p-1.5 rounded">
+                    <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center text-sm font-semibold cursor-pointer">DK</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-48px)]">
+        <!-- Left Navigation -->
+        <nav class="w-56 bg-white border-r border-gray-200 flex-shrink-0">
+            <div class="py-4">
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-800 hover:bg-gray-100 bg-blue-50 border-l-2 border-blue-600">
+                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    Home
+                </a>
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    Documents
+                </a>
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    Pages
+                </a>
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+                    Site Contents
+                </a>
+                <hr class="my-3 mx-4 border-gray-200">
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    Dashboards
+                </a>
+                <a href="#" class="flex items-center gap-3 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    Health Reports
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-auto bg-gray-50">
+            <div class="p-6">
+                <!-- Page Title Area -->
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h1 class="text-2xl font-semibold text-gray-900">IT Operations Dashboard</h1>
+                        <p class="text-sm text-gray-500 mt-1">Real-time operational metrics from Power BI</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span class="text-green-700 font-medium">Connected</span>
+                        </div>
+                        <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Embedded Power BI Report Area -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <!-- Report Toolbar -->
+                    <div class="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Power BI Report</span>
+                            <div class="flex items-center gap-1 text-xs text-gray-400">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                Last refreshed: 2:45 PM
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100">Export</button>
+                            <button class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100">Full Screen</button>
+                        </div>
+                    </div>
+
+                    <div class="flex">
+                        <!-- Main Report Content -->
+                        <div class="flex-1 p-5">
+                            <!-- KPI Cards -->
+                            <div class="grid grid-cols-4 gap-4 mb-6">
+                                <div class="kpi-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                                    <div class="text-xs font-medium text-blue-600 uppercase tracking-wider">Total Incidents</div>
+                                    <div class="text-3xl font-bold text-blue-900 mt-1">1,247</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+                                        <span class="text-xs text-green-600 font-medium">12% from last month</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-card bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                                    <div class="text-xs font-medium text-orange-600 uppercase tracking-wider">Open Tickets</div>
+                                    <div class="text-3xl font-bold text-orange-900 mt-1">89</div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                                        <span class="text-xs text-red-500 font-medium">3% from last week</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-card bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
+                                    <div class="text-xs font-medium text-green-600 uppercase tracking-wider">Avg Resolution</div>
+                                    <div class="text-3xl font-bold text-green-900 mt-1">4.2<span class="text-lg font-normal">h</span></div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+                                        <span class="text-xs text-green-600 font-medium">0.8h faster</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                                    <div class="text-xs font-medium text-purple-600 uppercase tracking-wider">SLA Compliance</div>
+                                    <div class="text-3xl font-bold text-purple-900 mt-1">96.8<span class="text-lg font-normal">%</span></div>
+                                    <div class="flex items-center gap-1 mt-2">
+                                        <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg>
+                                        <span class="text-xs text-green-600 font-medium">Above 95% target</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Charts Row -->
+                            <div class="grid grid-cols-5 gap-5">
+                                <!-- Bar Chart -->
+                                <div class="col-span-3 bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="text-sm font-semibold text-gray-700 mb-1">Incidents by Category</div>
+                                    <div class="text-xs text-gray-400 mb-4">March 2026</div>
+                                    <div class="flex items-end gap-3 h-44 px-2">
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-blue-500 rounded-t bar" style="height: 85%"></div>
+                                            <span class="text-xs text-gray-500">Network</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-blue-400 rounded-t bar" style="height: 65%"></div>
+                                            <span class="text-xs text-gray-500">Hardware</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-blue-300 rounded-t bar" style="height: 92%"></div>
+                                            <span class="text-xs text-gray-500">Software</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-orange-400 rounded-t bar" style="height: 45%"></div>
+                                            <span class="text-xs text-gray-500">Security</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-purple-400 rounded-t bar" style="height: 55%"></div>
+                                            <span class="text-xs text-gray-500">Access</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-green-400 rounded-t bar" style="height: 30%"></div>
+                                            <span class="text-xs text-gray-500">Email</span>
+                                        </div>
+                                        <div class="flex-1 flex flex-col items-center gap-1">
+                                            <div class="w-full bg-red-400 rounded-t bar" style="height: 38%"></div>
+                                            <span class="text-xs text-gray-500">Other</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Donut Chart -->
+                                <div class="col-span-2 bg-white rounded-lg border border-gray-200 p-4">
+                                    <div class="text-sm font-semibold text-gray-700 mb-1">Ticket Status</div>
+                                    <div class="text-xs text-gray-400 mb-4">Current Distribution</div>
+                                    <div class="flex items-center justify-center">
+                                        <svg width="160" height="160" viewBox="0 0 42 42">
+                                            <circle cx="21" cy="21" r="15.915" class="donut-ring" stroke="#e5e7eb" stroke-width="3"/>
+                                            <circle cx="21" cy="21" r="15.915" class="donut-ring" stroke="#10b981" stroke-width="3"
+                                                stroke-dasharray="58 42" stroke-dashoffset="25"/>
+                                            <circle cx="21" cy="21" r="15.915" class="donut-ring" stroke="#f59e0b" stroke-width="3"
+                                                stroke-dasharray="22 78" stroke-dashoffset="67"/>
+                                            <circle cx="21" cy="21" r="15.915" class="donut-ring" stroke="#ef4444" stroke-width="3"
+                                                stroke-dasharray="12 88" stroke-dashoffset="45"/>
+                                            <circle cx="21" cy="21" r="15.915" class="donut-ring" stroke="#6366f1" stroke-width="3"
+                                                stroke-dasharray="8 92" stroke-dashoffset="33"/>
+                                            <text x="21" y="19.5" text-anchor="middle" class="text-xs" fill="#374151" font-size="4" font-weight="700">1,247</text>
+                                            <text x="21" y="24" text-anchor="middle" fill="#9ca3af" font-size="2.5">Total</text>
+                                        </svg>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 mt-3">
+                                        <div class="flex items-center gap-1.5 text-xs">
+                                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+                                            <span class="text-gray-600">Resolved (58%)</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-xs">
+                                            <span class="w-2.5 h-2.5 bg-yellow-500 rounded-full"></span>
+                                            <span class="text-gray-600">In Progress (22%)</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-xs">
+                                            <span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                                            <span class="text-gray-600">Critical (12%)</span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-xs">
+                                            <span class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></span>
+                                            <span class="text-gray-600">Pending (8%)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Table -->
+                            <div class="mt-5 bg-white rounded-lg border border-gray-200 p-4">
+                                <div class="text-sm font-semibold text-gray-700 mb-3">Recent Incidents</div>
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 text-left text-gray-500 uppercase tracking-wider">
+                                            <th class="pb-2 font-medium">ID</th>
+                                            <th class="pb-2 font-medium">Title</th>
+                                            <th class="pb-2 font-medium">Priority</th>
+                                            <th class="pb-2 font-medium">Assigned To</th>
+                                            <th class="pb-2 font-medium">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-gray-700">
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-blue-600 font-medium">INC-4521</td>
+                                            <td class="py-2">VPN connectivity failure - Building C</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-medium">Critical</span></td>
+                                            <td class="py-2">Alex Johnson</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full font-medium">In Progress</span></td>
+                                        </tr>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-blue-600 font-medium">INC-4520</td>
+                                            <td class="py-2">Outlook sync errors on mobile devices</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-medium">High</span></td>
+                                            <td class="py-2">Maria Chen</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full font-medium">In Progress</span></td>
+                                        </tr>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-blue-600 font-medium">INC-4519</td>
+                                            <td class="py-2">Printer queue stuck - Finance dept</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">Medium</span></td>
+                                            <td class="py-2">Sam Patel</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">Resolved</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-2 text-blue-600 font-medium">INC-4518</td>
+                                            <td class="py-2">New laptop provisioning request</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full font-medium">Low</span></td>
+                                            <td class="py-2">Jordan Lee</td>
+                                            <td class="py-2"><span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium">Pending</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Filter Pane -->
+                        <div class="w-56 bg-gray-50 border-l border-gray-200 p-4 flex-shrink-0">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-semibold text-gray-700">Filters</span>
+                                <button class="text-xs text-blue-600 hover:underline">Clear all</button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Date Range</label>
+                                    <select class="filter-dropdown w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 pr-6">
+                                        <option>Last 30 Days</option>
+                                        <option>Last 7 Days</option>
+                                        <option>This Quarter</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Department</label>
+                                    <select class="filter-dropdown w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 pr-6">
+                                        <option>All Departments</option>
+                                        <option>Engineering</option>
+                                        <option>Finance</option>
+                                        <option>Marketing</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Priority</label>
+                                    <select class="filter-dropdown w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 pr-6">
+                                        <option>All Priorities</option>
+                                        <option>Critical</option>
+                                        <option>High</option>
+                                        <option>Medium</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                                    <select class="filter-dropdown w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 pr-6">
+                                        <option>All Statuses</option>
+                                        <option>Open</option>
+                                        <option>In Progress</option>
+                                        <option>Resolved</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Assigned To</label>
+                                    <select class="filter-dropdown w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 pr-6">
+                                        <option>All Agents</option>
+                                        <option>Alex Johnson</option>
+                                        <option>Maria Chen</option>
+                                        <option>Sam Patel</option>
+                                    </select>
+                                </div>
+
+                                <hr class="border-gray-200">
+
+                                <button class="w-full text-xs bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium">
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

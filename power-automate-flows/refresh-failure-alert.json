@@ -1,0 +1,203 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "name": "Power BI Refresh Failure Alert",
+    "description": "Monitors Power BI dataset refresh history every hour and sends email + Teams notifications when a refresh fails.",
+    "author": "SharePoint Power BI Dashboard Project"
+  },
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "WorkspaceId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "The Power BI workspace (group) GUID"
+      }
+    },
+    "DatasetId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "The Power BI dataset GUID to monitor"
+      }
+    },
+    "NotificationEmail": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Email address to receive failure notifications"
+      }
+    },
+    "TeamsChannelId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Microsoft Teams channel ID for posting alerts"
+      }
+    },
+    "TeamsTeamId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Microsoft Teams team ID for posting alerts"
+      }
+    }
+  },
+  "triggers": {
+    "Recurrence_Every_Hour": {
+      "type": "Recurrence",
+      "recurrence": {
+        "frequency": "Hour",
+        "interval": 1,
+        "timeZone": "UTC"
+      }
+    }
+  },
+  "actions": {
+    "Get_Refresh_History": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "method": "GET",
+        "uri": "https://api.powerbi.com/v1.0/myorg/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}/refreshes?$top=5",
+        "authentication": {
+          "type": "ActiveDirectoryOAuth",
+          "tenant": "@{variables('TenantId')}",
+          "audience": "https://analysis.windows.net/powerbi/api",
+          "clientId": "@{variables('ClientId')}",
+          "secret": "@{variables('ClientSecret')}",
+          "authority": "https://login.microsoftonline.com"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      }
+    },
+    "Parse_Refresh_Response": {
+      "type": "ParseJson",
+      "runAfter": {
+        "Get_Refresh_History": ["Succeeded"]
+      },
+      "inputs": {
+        "content": "@body('Get_Refresh_History')",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "requestId": { "type": "string" },
+                  "id": { "type": "integer" },
+                  "refreshType": { "type": "string" },
+                  "startTime": { "type": "string" },
+                  "endTime": { "type": "string" },
+                  "status": { "type": "string" },
+                  "serviceExceptionJson": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Filter_Failed_Refreshes": {
+      "type": "Query",
+      "runAfter": {
+        "Parse_Refresh_Response": ["Succeeded"]
+      },
+      "inputs": {
+        "from": "@body('Parse_Refresh_Response')?['value']",
+        "where": "@equals(item()?['status'], 'Failed')"
+      }
+    },
+    "Check_If_Failures_Exist": {
+      "type": "If",
+      "runAfter": {
+        "Filter_Failed_Refreshes": ["Succeeded"]
+      },
+      "expression": {
+        "and": [
+          {
+            "greater": [
+              "@length(body('Filter_Failed_Refreshes'))",
+              0
+            ]
+          }
+        ]
+      },
+      "actions": {
+        "Get_Latest_Failure": {
+          "type": "Compose",
+          "runAfter": {},
+          "inputs": "@first(body('Filter_Failed_Refreshes'))"
+        },
+        "Send_Email_Notification": {
+          "type": "ApiConnection",
+          "runAfter": {
+            "Get_Latest_Failure": ["Succeeded"]
+          },
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['office365']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v2/Mail",
+            "body": {
+              "To": "@{parameters('NotificationEmail')}",
+              "Subject": "[ALERT] Power BI Dataset Refresh Failed - @{parameters('DatasetId')}",
+              "Body": "<html><body><h2 style='color:#d13438;'>Power BI Refresh Failure Detected</h2><table style='border-collapse:collapse;font-family:Segoe UI,sans-serif;'><tr><td style='padding:6px 12px;font-weight:bold;'>Workspace</td><td style='padding:6px 12px;'>@{parameters('WorkspaceId')}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Dataset</td><td style='padding:6px 12px;'>@{parameters('DatasetId')}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Start Time</td><td style='padding:6px 12px;'>@{outputs('Get_Latest_Failure')?['startTime']}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>End Time</td><td style='padding:6px 12px;'>@{outputs('Get_Latest_Failure')?['endTime']}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Status</td><td style='padding:6px 12px;color:#d13438;font-weight:bold;'>Failed</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Error</td><td style='padding:6px 12px;'>@{outputs('Get_Latest_Failure')?['serviceExceptionJson']}</td></tr></table><p style='margin-top:16px;'>Review the dataset in the <a href='https://app.powerbi.com/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}/details'>Power BI Service</a>.</p></body></html>",
+              "Importance": "High",
+              "IsHtml": true
+            }
+          }
+        },
+        "Post_To_Teams_Channel": {
+          "type": "ApiConnection",
+          "runAfter": {
+            "Get_Latest_Failure": ["Succeeded"]
+          },
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['teams']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v3/beta/teams/@{parameters('TeamsTeamId')}/channels/@{parameters('TeamsChannelId')}/messages",
+            "body": {
+              "body": {
+                "contentType": "html",
+                "content": "<b style='color:#d13438;'>Power BI Refresh Failed</b><br/><b>Dataset:</b> @{parameters('DatasetId')}<br/><b>Time:</b> @{outputs('Get_Latest_Failure')?['startTime']}<br/><b>Error:</b> @{outputs('Get_Latest_Failure')?['serviceExceptionJson']}<br/><a href='https://app.powerbi.com/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}/details'>Open in Power BI</a>"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {}
+      }
+    }
+  },
+  "connectionReferences": {
+    "office365": {
+      "connectionName": "shared_office365",
+      "source": "Embedded",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+      "tier": "NotSpecified"
+    },
+    "teams": {
+      "connectionName": "shared_teams",
+      "source": "Embedded",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_teams",
+      "tier": "NotSpecified"
+    }
+  }
+}

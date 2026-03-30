@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+lib/
+dist/
+temp/
+release/
+
+# SPFx solution package
+*.sppkg
+sharepoint/solution/
+
+# SPFx temp files
+.heft/
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Health check reports
+health-checks/reports/*.html
+
+# Coverage
+coverage/

@@ -1,0 +1,229 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "name": "Power BI Data Threshold Alert",
+    "description": "Periodically queries a Power BI dataset via DAX and sends alerts when a value exceeds a configurable threshold.",
+    "author": "SharePoint Power BI Dashboard Project"
+  },
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "WorkspaceId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Power BI workspace GUID"
+      }
+    },
+    "DatasetId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Power BI dataset GUID to query"
+      }
+    },
+    "DaxQuery": {
+      "defaultValue": "EVALUATE ROW(\"Value\", CALCULATE(SUM(Sales[Amount]), Sales[Date] = TODAY()))",
+      "type": "String",
+      "metadata": {
+        "description": "DAX query that returns a single-row, single-column result"
+      }
+    },
+    "ThresholdValue": {
+      "defaultValue": "100000",
+      "type": "String",
+      "metadata": {
+        "description": "Numeric threshold; alert fires when the query result exceeds this"
+      }
+    },
+    "MetricName": {
+      "defaultValue": "Daily Sales Amount",
+      "type": "String",
+      "metadata": {
+        "description": "Human-readable name of the metric being monitored"
+      }
+    },
+    "NotificationEmail": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Email address for threshold breach notifications"
+      }
+    },
+    "TeamsChannelId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Teams channel ID for posting alerts"
+      }
+    },
+    "TeamsTeamId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Teams team ID for posting alerts"
+      }
+    }
+  },
+  "triggers": {
+    "Recurrence_Every_30_Minutes": {
+      "type": "Recurrence",
+      "recurrence": {
+        "frequency": "Minute",
+        "interval": 30,
+        "timeZone": "UTC"
+      }
+    }
+  },
+  "actions": {
+    "Execute_DAX_Query": {
+      "type": "Http",
+      "runAfter": {},
+      "inputs": {
+        "method": "POST",
+        "uri": "https://api.powerbi.com/v1.0/myorg/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}/executeQueries",
+        "authentication": {
+          "type": "ActiveDirectoryOAuth",
+          "tenant": "@{variables('TenantId')}",
+          "audience": "https://analysis.windows.net/powerbi/api",
+          "clientId": "@{variables('ClientId')}",
+          "secret": "@{variables('ClientSecret')}",
+          "authority": "https://login.microsoftonline.com"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "queries": [
+            {
+              "query": "@{parameters('DaxQuery')}"
+            }
+          ],
+          "serializerSettings": {
+            "includeNulls": true
+          }
+        }
+      }
+    },
+    "Parse_Query_Result": {
+      "type": "ParseJson",
+      "runAfter": {
+        "Execute_DAX_Query": ["Succeeded"]
+      },
+      "inputs": {
+        "content": "@body('Execute_DAX_Query')",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tables": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Extract_Value": {
+      "type": "Compose",
+      "runAfter": {
+        "Parse_Query_Result": ["Succeeded"]
+      },
+      "inputs": "@first(first(first(body('Parse_Query_Result')?['results'])?['tables'])?['rows'])?['[Value]']"
+    },
+    "Check_Threshold_Exceeded": {
+      "type": "If",
+      "runAfter": {
+        "Extract_Value": ["Succeeded"]
+      },
+      "expression": {
+        "and": [
+          {
+            "greater": [
+              "@float(outputs('Extract_Value'))",
+              "@float(parameters('ThresholdValue'))"
+            ]
+          }
+        ]
+      },
+      "actions": {
+        "Send_Threshold_Email": {
+          "type": "ApiConnection",
+          "runAfter": {},
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['office365']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v2/Mail",
+            "body": {
+              "To": "@{parameters('NotificationEmail')}",
+              "Subject": "[ALERT] @{parameters('MetricName')} exceeded threshold (@{outputs('Extract_Value')} > @{parameters('ThresholdValue')})",
+              "Body": "<html><body><h2 style='color:#ffb900;'>Data Threshold Exceeded</h2><table style='border-collapse:collapse;font-family:Segoe UI,sans-serif;'><tr><td style='padding:6px 12px;font-weight:bold;'>Metric</td><td style='padding:6px 12px;'>@{parameters('MetricName')}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Current Value</td><td style='padding:6px 12px;font-weight:bold;color:#d13438;'>@{outputs('Extract_Value')}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Threshold</td><td style='padding:6px 12px;'>@{parameters('ThresholdValue')}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>Checked At</td><td style='padding:6px 12px;'>@{utcNow()}</td></tr><tr><td style='padding:6px 12px;font-weight:bold;'>DAX Query</td><td style='padding:6px 12px;'><code>@{parameters('DaxQuery')}</code></td></tr></table><p style='margin-top:16px;'>Investigate in the <a href='https://app.powerbi.com/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}'>Power BI Service</a>.</p></body></html>",
+              "Importance": "High",
+              "IsHtml": true
+            }
+          }
+        },
+        "Post_Threshold_Alert_To_Teams": {
+          "type": "ApiConnection",
+          "runAfter": {},
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['teams']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v3/beta/teams/@{parameters('TeamsTeamId')}/channels/@{parameters('TeamsChannelId')}/messages",
+            "body": {
+              "body": {
+                "contentType": "html",
+                "content": "<b style='color:#ffb900;'>Threshold Exceeded: @{parameters('MetricName')}</b><br/><b>Value:</b> @{outputs('Extract_Value')} (Threshold: @{parameters('ThresholdValue')})<br/><b>Time:</b> @{utcNow()}<br/><a href='https://app.powerbi.com/groups/@{parameters('WorkspaceId')}/datasets/@{parameters('DatasetId')}'>Open in Power BI</a>"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {}
+      }
+    }
+  },
+  "connectionReferences": {
+    "office365": {
+      "connectionName": "shared_office365",
+      "source": "Embedded",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_office365",
+      "tier": "NotSpecified"
+    },
+    "teams": {
+      "connectionName": "shared_teams",
+      "source": "Embedded",
+      "id": "/providers/Microsoft.PowerApps/apis/shared_teams",
+      "tier": "NotSpecified"
+    }
+  }
+}

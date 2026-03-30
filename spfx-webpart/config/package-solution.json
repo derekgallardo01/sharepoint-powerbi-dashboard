@@ -1,0 +1,45 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "sharepoint-powerbi-dashboard",
+    "id": "a3e7c4b2-1f8d-4e6a-9b5c-2d7f0e3a8b1c",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "Embeds Power BI reports in SharePoint with health monitoring"
+      },
+      "longDescription": {
+        "default": "A comprehensive SPFx web part for embedding Power BI reports in SharePoint Online with dynamic filtering, connection health monitoring, and troubleshooting capabilities."
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "Power BI Dashboard Web Part",
+        "description": "Embed and interact with Power BI reports directly within SharePoint pages.",
+        "id": "d4f8a1e6-3c9b-4d2e-8a7f-5b6c0e1d9f3a",
+        "version": "1.0.0.0"
+      }
+    ],
+    "webApiPermissionRequests": [
+      {
+        "resource": "Power BI Service",
+        "scope": "https://analysis.windows.net/powerbi/api/.default"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/sharepoint-powerbi-dashboard.sppkg"
+  }
+}
