@@ -1,0 +1,330 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "name": "Scheduled Report Email",
+    "description": "Exports a Power BI report page as PDF every Monday at 8 AM and emails it to a distribution list with report metadata.",
+    "author": "SharePoint Power BI Dashboard Project",
+    "version": "1.0.0"
+  },
+  "parameters": {
+    "$connections": {
+      "defaultValue": {},
+      "type": "Object"
+    },
+    "WorkspaceId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "The Power BI workspace (group) GUID"
+      }
+    },
+    "ReportId": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "The Power BI report GUID to export"
+      }
+    },
+    "PageName": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "The report page name to export (e.g., 'ReportSection1'). Leave empty to export the default page."
+      }
+    },
+    "DistributionListEmail": {
+      "defaultValue": "",
+      "type": "String",
+      "metadata": {
+        "description": "Email address of the distribution list to receive the weekly report"
+      }
+    },
+    "ReportDisplayName": {
+      "defaultValue": "Weekly Power BI Report",
+      "type": "String",
+      "metadata": {
+        "description": "Human-readable report name used in the email subject and body"
+      }
+    },
+    "TimeZone": {
+      "defaultValue": "UTC",
+      "type": "String",
+      "metadata": {
+        "description": "Time zone for scheduling and date display (e.g., 'Eastern Standard Time')"
+      }
+    }
+  },
+  "triggers": {
+    "Weekly_Monday_8AM": {
+      "type": "Recurrence",
+      "recurrence": {
+        "frequency": "Week",
+        "interval": 1,
+        "schedule": {
+          "weekDays": ["Monday"],
+          "hours": [8],
+          "minutes": [0]
+        },
+        "timeZone": "@parameters('TimeZone')"
+      }
+    }
+  },
+  "actions": {
+    "Initialize_Timestamp": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "ExportTimestamp",
+            "type": "string",
+            "value": "@{utcNow('yyyy-MM-dd HH:mm:ss')} UTC"
+          }
+        ]
+      },
+      "runAfter": {}
+    },
+    "Initialize_DateRange": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "DateRange",
+            "type": "string",
+            "value": "@{formatDateTime(addDays(utcNow(), -7), 'yyyy-MM-dd')} to @{formatDateTime(utcNow(), 'yyyy-MM-dd')}"
+          }
+        ]
+      },
+      "runAfter": {
+        "Initialize_Timestamp": ["Succeeded"]
+      }
+    },
+    "Initialize_ExportStatus": {
+      "type": "InitializeVariable",
+      "inputs": {
+        "variables": [
+          {
+            "name": "ExportStatus",
+            "type": "string",
+            "value": "Pending"
+          }
+        ]
+      },
+      "runAfter": {
+        "Initialize_DateRange": ["Succeeded"]
+      }
+    },
+    "Export_Report_To_PDF": {
+      "type": "Http",
+      "inputs": {
+        "method": "POST",
+        "uri": "https://api.powerbi.com/v1.0/myorg/groups/@{parameters('WorkspaceId')}/reports/@{parameters('ReportId')}/ExportTo",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "authentication": {
+          "type": "ActiveDirectoryOAuth",
+          "authority": "https://login.microsoftonline.com/common",
+          "tenant": "",
+          "audience": "https://analysis.windows.net/powerbi/api",
+          "clientId": "",
+          "secret": ""
+        },
+        "body": {
+          "format": "PDF",
+          "powerBIReportConfiguration": {
+            "pages": "@if(empty(parameters('PageName')), null, createArray(json(concat('{\"pageName\": \"', parameters('PageName'), '\"}'))))",
+            "defaultBookmark": {
+              "state": ""
+            }
+          }
+        }
+      },
+      "runAfter": {
+        "Initialize_ExportStatus": ["Succeeded"]
+      },
+      "runtimeConfiguration": {
+        "contentTransfer": {
+          "transferMode": "Chunked"
+        }
+      }
+    },
+    "Parse_Export_Response": {
+      "type": "ParseJson",
+      "inputs": {
+        "content": "@body('Export_Report_To_PDF')",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "createdDateTime": { "type": "string" },
+            "lastActionDateTime": { "type": "string" },
+            "reportId": { "type": "string" },
+            "reportName": { "type": "string" },
+            "status": { "type": "string" },
+            "percentComplete": { "type": "integer" },
+            "resourceLocation": { "type": "string" },
+            "resourceFileExtension": { "type": "string" },
+            "expirationTime": { "type": "string" }
+          }
+        }
+      },
+      "runAfter": {
+        "Export_Report_To_PDF": ["Succeeded"]
+      }
+    },
+    "Wait_For_Export_Completion": {
+      "type": "Until",
+      "expression": "@or(equals(variables('ExportStatus'), 'Succeeded'), equals(variables('ExportStatus'), 'Failed'))",
+      "limit": {
+        "count": 30,
+        "timeout": "PT10M"
+      },
+      "actions": {
+        "Delay_10_Seconds": {
+          "type": "Wait",
+          "inputs": {
+            "interval": {
+              "count": 10,
+              "unit": "Second"
+            }
+          },
+          "runAfter": {}
+        },
+        "Check_Export_Status": {
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "https://api.powerbi.com/v1.0/myorg/groups/@{parameters('WorkspaceId')}/reports/@{parameters('ReportId')}/exports/@{body('Parse_Export_Response')?['id']}",
+            "authentication": {
+              "type": "ActiveDirectoryOAuth",
+              "authority": "https://login.microsoftonline.com/common",
+              "tenant": "",
+              "audience": "https://analysis.windows.net/powerbi/api",
+              "clientId": "",
+              "secret": ""
+            }
+          },
+          "runAfter": {
+            "Delay_10_Seconds": ["Succeeded"]
+          }
+        },
+        "Parse_Status_Response": {
+          "type": "ParseJson",
+          "inputs": {
+            "content": "@body('Check_Export_Status')",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "status": { "type": "string" },
+                "percentComplete": { "type": "integer" },
+                "resourceLocation": { "type": "string" }
+              }
+            }
+          },
+          "runAfter": {
+            "Check_Export_Status": ["Succeeded"]
+          }
+        },
+        "Update_Export_Status": {
+          "type": "SetVariable",
+          "inputs": {
+            "name": "ExportStatus",
+            "value": "@body('Parse_Status_Response')?['status']"
+          },
+          "runAfter": {
+            "Parse_Status_Response": ["Succeeded"]
+          }
+        }
+      },
+      "runAfter": {
+        "Parse_Export_Response": ["Succeeded"]
+      }
+    },
+    "Condition_Export_Succeeded": {
+      "type": "If",
+      "expression": {
+        "and": [
+          {
+            "equals": ["@variables('ExportStatus')", "Succeeded"]
+          }
+        ]
+      },
+      "actions": {
+        "Download_Exported_PDF": {
+          "type": "Http",
+          "inputs": {
+            "method": "GET",
+            "uri": "https://api.powerbi.com/v1.0/myorg/groups/@{parameters('WorkspaceId')}/reports/@{parameters('ReportId')}/exports/@{body('Parse_Export_Response')?['id']}/file",
+            "authentication": {
+              "type": "ActiveDirectoryOAuth",
+              "authority": "https://login.microsoftonline.com/common",
+              "tenant": "",
+              "audience": "https://analysis.windows.net/powerbi/api",
+              "clientId": "",
+              "secret": ""
+            }
+          },
+          "runAfter": {}
+        },
+        "Send_Report_Email": {
+          "type": "ApiConnection",
+          "inputs": {
+            "host": {
+              "connection": {
+                "name": "@parameters('$connections')['office365']['connectionId']"
+              }
+            },
+            "method": "post",
+            "path": "/v2/Mail",
+            "body": {
+              "To": "@parameters('DistributionListEmail')",
+              "Subject": "@{parameters('ReportDisplayName')} - @{formatDateTime(utcNow(), 'MMMM dd, yyyy')}",
+              "Body": "<html><body style=\"font-family: Segoe UI, Arial, sans-serif; color: #333;\"><h2 style=\"color: #0078d4;\">@{parameters('ReportDisplayName')}</h2><table style=\"border-collapse: collapse; margin: 16px 0;\"><tr><td style=\"padding: 6px 16px 6px 0; font-weight: 600;\">Report Name</td><td style=\"padding: 6px 0;\">@{parameters('ReportDisplayName')}</td></tr><tr><td style=\"padding: 6px 16px 6px 0; font-weight: 600;\">Date Range</td><td style=\"padding: 6px 0;\">@{variables('DateRange')}</td></tr><tr><td style=\"padding: 6px 16px 6px 0; font-weight: 600;\">Export Timestamp</td><td style=\"padding: 6px 0;\">@{variables('ExportTimestamp')}</td></tr><tr><td style=\"padding: 6px 16px 6px 0; font-weight: 600;\">Workspace ID</td><td style=\"padding: 6px 0;\"><code>@{parameters('WorkspaceId')}</code></td></tr><tr><td style=\"padding: 6px 16px 6px 0; font-weight: 600;\">Report ID</td><td style=\"padding: 6px 0;\"><code>@{parameters('ReportId')}</code></td></tr></table><p>The exported report is attached as a PDF. Open it to view the latest data snapshot.</p><hr style=\"border: none; border-top: 1px solid #ddd; margin: 24px 0;\"/><p style=\"font-size: 12px; color: #888;\">This report was generated automatically by the SharePoint Power BI Dashboard solution. To unsubscribe, contact your Power BI administrator.</p></body></html>",
+              "Importance": "Normal",
+              "IsHtml": true,
+              "Attachments": [
+                {
+                  "@odata.type": "#Microsoft.OutlookServices.FileAttachment",
+                  "Name": "@{replace(parameters('ReportDisplayName'), ' ', '-')}-@{formatDateTime(utcNow(), 'yyyy-MM-dd')}.pdf",
+                  "ContentBytes": "@{base64(body('Download_Exported_PDF'))}"
+                }
+              ]
+            }
+          },
+          "runAfter": {
+            "Download_Exported_PDF": ["Succeeded"]
+          }
+        }
+      },
+      "else": {
+        "actions": {
+          "Send_Failure_Notification": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['office365']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v2/Mail",
+              "body": {
+                "To": "@parameters('DistributionListEmail')",
+                "Subject": "[FAILED] @{parameters('ReportDisplayName')} - Export Failed @{formatDateTime(utcNow(), 'yyyy-MM-dd')}",
+                "Body": "<html><body style=\"font-family: Segoe UI, Arial, sans-serif; color: #333;\"><h2 style=\"color: #a80000;\">Report Export Failed</h2><p>The scheduled export of <strong>@{parameters('ReportDisplayName')}</strong> failed at @{variables('ExportTimestamp')}.</p><p><strong>Export Status:</strong> @{variables('ExportStatus')}</p><p>Please check the Power BI service and verify that the report and workspace are accessible.</p></body></html>",
+                "Importance": "High",
+                "IsHtml": true
+              }
+            },
+            "runAfter": {}
+          }
+        }
+      },
+      "runAfter": {
+        "Wait_For_Export_Completion": ["Succeeded"]
+      }
+    }
+  }
+}

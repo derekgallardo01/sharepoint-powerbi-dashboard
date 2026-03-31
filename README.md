@@ -155,11 +155,13 @@ sequenceDiagram
 - **Gateway Health** -- enumerate gateways and test every data-source connection
 - **Permissions Audit** -- workspace access list, dataset permissions, and RLS roles
 - **Embed Config Validation** -- GUID checks, token acquisition, API permission tests
+- **Dataset Size** -- compare dataset sizes against Pro (1 GB) and Premium (10 GB) limits with configurable warning thresholds
 - **Master Runner** -- orchestrates all checks and produces a colour-coded HTML report
 
 ### Power Automate Flows
 - Hourly polling for dataset refresh failures with email + Teams alerts
 - Configurable DAX-based data threshold alerts
+- Weekly scheduled report export to PDF with email distribution
 - Ready-to-import JSON definitions with documented parameters
 
 ---
@@ -257,6 +259,7 @@ An HTML report is saved to `health-checks/reports/`. Open **[Health Report Previ
 | `Test-PowerBIGatewayHealth.ps1` | Verify gateway and data-source connectivity |
 | `Test-PowerBIPermissions.ps1` | Audit workspace members, dataset permissions, RLS |
 | `Test-PowerBIEmbedConfig.ps1` | Validate embed configuration and token generation |
+| `Test-PowerBIDatasetSize.ps1` | Check dataset sizes against Pro and Premium limits |
 
 Each script supports `-Help` via standard PowerShell `Get-Help`.
 
@@ -270,6 +273,7 @@ Pre-built flow definitions are in `power-automate-flows/`. See the [flow README]
 |---|---|---|
 | `refresh-failure-alert.json` | Every 1 hour | Email + Teams alert on refresh failure |
 | `data-threshold-alert.json` | Every 30 minutes | Email + Teams alert when DAX value exceeds threshold |
+| `scheduled-report-email.json` | Weekly (Monday 8 AM) | Export report page as PDF and email to distribution list |
 
 ---
 
@@ -287,9 +291,13 @@ Detailed Mermaid diagrams are available in the `docs/diagrams/` directory. These
 
 ---
 
-## Troubleshooting Quick Reference
+## Troubleshooting Playbook
 
-> For a comprehensive interactive decision tree, see the **[Error Recovery Diagram](docs/diagrams/error-recovery.md)**. It walks through every common failure scenario with specific remediation steps.
+For a comprehensive guide with 13 common issues, step-by-step resolutions, and prevention strategies, see the **[Troubleshooting Playbook](docs/troubleshooting-playbook.md)**. Each issue links to the relevant health check script.
+
+> For an interactive decision tree, see the **[Error Recovery Diagram](docs/diagrams/error-recovery.md)**.
+
+### Quick Reference
 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
@@ -325,12 +333,15 @@ sharepoint-powerbi-dashboard/
     Test-PowerBIGatewayHealth.ps1
     Test-PowerBIPermissions.ps1
     Test-PowerBIEmbedConfig.ps1
+    Test-PowerBIDatasetSize.ps1    # Dataset size vs Pro/Premium limits
     reports/                       # Generated HTML reports (git-ignored)
   power-automate-flows/
     refresh-failure-alert.json
     data-threshold-alert.json
+    scheduled-report-email.json    # Weekly PDF report export + email
     README.md
   docs/
+    troubleshooting-playbook.md    # 13-issue troubleshooting guide
     diagrams/
       architecture.md              # System architecture (Mermaid)
       token-flow.md                # Token acquisition sequence diagram
@@ -350,15 +361,38 @@ sharepoint-powerbi-dashboard/
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/my-change`.
-3. Commit your changes with a clear message.
-4. Open a pull request against `main`.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites, setup instructions, development workflow, and code style guidelines.
 
-Please ensure:
-- TypeScript compiles without errors (`gulp build`).
-- PowerShell scripts pass `Invoke-ScriptAnalyzer`.
-- Flow JSON is valid and importable.
+---
+
+## Changelog
+
+### v1.1.0
+
+- Added `Test-PowerBIDatasetSize.ps1` health check for monitoring dataset sizes against Pro and Premium limits
+- Added `scheduled-report-email.json` Power Automate flow for weekly PDF report distribution
+- Added comprehensive [Troubleshooting Playbook](docs/troubleshooting-playbook.md) with 13 documented issues
+- Updated health check script table and flow reference
+
+### v1.0.0
+
+- SPFx web part with AAD token acquisition, dynamic URL filtering, and responsive layout
+- Health check scripts: refresh status, gateway health, permissions audit, embed config validation
+- Power Automate flows: refresh failure alert, data threshold alert
+- Architecture diagrams and HTML screenshot mockups
+- Deployment documentation and project scaffolding
+
+---
+
+## Roadmap
+
+Planned features for future releases:
+
+- **Workspace dashboard web part** -- embed multiple reports in a tabbed layout with workspace-level navigation
+- **Automated report snapshots** -- scheduled capture of report visuals to a SharePoint image library for historical comparison
+- **Power BI REST API proxy** -- Azure Function middleware for server-side token management (app-owns-data pattern)
+- **Multi-language support** -- localized property pane labels and error messages for global deployments
+- **Capacity monitoring** -- health check scripts for Premium capacity metrics (CPU, memory, query duration)
 
 ---
 
