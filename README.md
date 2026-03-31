@@ -8,6 +8,8 @@
 
 A production-ready SharePoint Framework (SPFx) web part that embeds Power BI reports with dynamic filtering, paired with PowerShell health-check scripts and Power Automate alert flows for end-to-end operational monitoring.
 
+> **[View the interactive dashboard mockup](docs/screenshots/hero-dashboard.html)** -- open in your browser to see the full dark-theme SharePoint experience with animated KPI cards, trend charts, heat maps, and incident tables.
+
 ---
 
 ## Overview
@@ -26,13 +28,16 @@ This project solves three common challenges in enterprise Power BI + SharePoint 
 |  (SPFx Web Part)    |<----->|   Reports & Datasets  |<----->|  Alert Flows     |
 +---------------------+       +-----------------------+       +------------------+
         |                               |
-        | AAD Token                     | REST API
+        | PowerBIService               | REST API
+        | (singleton + token cache)     |
         v                               v
 +---------------------+       +-----------------------+
 |  Azure AD           |       |  PowerShell Health    |
 |  App Registration   |       |  Check Scripts        |
 +---------------------+       +-----------------------+
 ```
+
+The SPFx web part uses a **singleton service layer** (`PowerBIService`) that manages AAD token caching with proactive refresh, exponential-backoff retry, and a typed event emitter for connection state changes. See [ADR 003](docs/adr/003-token-caching-strategy.md) for the token caching rationale.
 
 ```mermaid
 graph TD
@@ -230,6 +235,7 @@ Multiple values for the same filter are comma-separated: `pbi_Sales_Region=West,
 
 Open the following HTML files in your browser to see interactive mockups of the web part:
 
+- **[Hero Dashboard](docs/screenshots/hero-dashboard.html)** -- Full dark-theme SharePoint page with animated KPI cards, SVG trend chart with gradient fill, donut chart, service health heat map, incident table, and glassmorphism filter panel
 - **[Dashboard Embedded View](docs/screenshots/dashboard-embedded.html)** -- Power BI report embedded in a SharePoint page with KPI cards, bar chart, donut chart, incident table, and filter pane
 - **[Property Pane Configuration](docs/screenshots/property-pane.html)** -- SPFx property pane showing Report ID, Workspace ID, toggle switches, and connection status
 - **[Error and Loading States](docs/screenshots/error-state.html)** -- Loading spinner, authentication error, and "no report configured" states side by side
@@ -294,6 +300,63 @@ Detailed Mermaid diagrams are available in the `docs/diagrams/` directory. These
 
 ---
 
+## Architecture Decision Records
+
+Key design decisions are documented as lightweight ADRs in `docs/adr/`:
+
+| ADR | Title | Status |
+|---|---|---|
+| [001](docs/adr/001-spfx-over-iframe.md) | Use SPFx Web Part over direct iframe embedding | Accepted |
+| [002](docs/adr/002-health-check-architecture.md) | PowerShell-based health check pipeline | Accepted |
+| [003](docs/adr/003-token-caching-strategy.md) | Client-side AAD token caching with refresh | Accepted |
+
+Each ADR follows the [Context / Decision / Consequences](https://adr.github.io/) format and includes trade-off analysis with mitigations.
+
+---
+
+## Advanced Patterns
+
+The SPFx web part implements several enterprise TypeScript patterns:
+
+### Service Layer (`services/PowerBIService.ts`)
+- **Singleton** with `getInstance()` / `resetInstance()` lifecycle
+- **AAD token caching** with 55-minute proactive refresh (tokens expire at 60 min)
+- **Generic retry with exponential backoff** -- `retryAsync<T>()` function with configurable jitter, max delay, and per-error retry predicates
+- **Typed event emitter** for `connectionStateChange`, `tokenRefresh`, and `embedError` events
+- **Configuration builder** -- fluent `EmbedConfigBuilder` for constructing embed configs with compile-time safety
+- **Proper disposal** -- clears timers, nullifies state, prevents memory leaks
+
+### Type System (`models/types.ts`)
+- **Branded types** -- `ReportId`, `WorkspaceId`, `DatasetId` prevent accidental ID misuse at compile time
+- **Discriminated unions** -- `ReportState` (Loading | Ready | Error | Refreshing) with `kind` tag for exhaustive narrowing
+- **Custom error hierarchy** -- `PowerBIAuthError`, `PowerBIEmbedError`, `PowerBIConfigError` extending a base `PowerBIError`
+- **Type guards** -- `isReportReady()`, `isPowerBIError()`, etc.
+- **Utility types** -- `DeepPartial<T>`, `Mutable<T>`, `DeepMutable<T>`, `RequireAtLeastOne<T>`
+
+---
+
+## Code Quality
+
+### Error Boundary (`components/ErrorBoundary.tsx`)
+- React class-component error boundary that catches render failures
+- Professional error UI with Fluent-style card layout
+- Retry button resets the error state and re-renders children
+- After 3 failed retries, shows "contact support" guidance with diagnostic context
+- Logs structured error data (message, stack, component stack, timestamp) to the console
+
+### Configuration Validator (`utils/ConfigValidator.ts`)
+- Validates Report ID, Workspace ID, and embed URL format before any API calls
+- Returns a typed `ValidationResult` with field-level error messages
+- Detects common mistakes (workspace name pasted instead of GUID, HTTP instead of HTTPS, refresh interval too low)
+- `errorsByField()` helper for inline property pane validation
+
+### Retry Logic
+- Generic `retryAsync<T>()` with exponential backoff + jitter
+- Per-error retry predicates (auth errors are not retried; transient network errors are)
+- Configurable max attempts, base delay, and ceiling
+
+---
+
 ## Troubleshooting Playbook
 
 For a comprehensive guide with 13 common issues, step-by-step resolutions, and prevention strategies, see the **[Troubleshooting Playbook](docs/troubleshooting-playbook.md)**. Each issue links to the relevant health check script.
@@ -329,6 +392,13 @@ sharepoint-powerbi-dashboard/
         FilterPanel.module.scss
         ConnectionStatus.tsx       # Connection status indicator with auto-reconnect
         ConnectionStatus.module.scss
+        ErrorBoundary.tsx          # React error boundary with retry + support escalation
+      models/
+        types.ts                   # Branded types, discriminated unions, type guards
+      services/
+        PowerBIService.ts          # Singleton service: token cache, retry, events
+      utils/
+        ConfigValidator.ts         # Web part config validation with field-level errors
       PowerBiDashboardWebPart.ts   # SPFx web part entry point
       PowerBiDashboardWebPart.manifest.json
     package.json
@@ -349,6 +419,10 @@ sharepoint-powerbi-dashboard/
     scheduled-report-email.json    # Weekly PDF report export + email
     README.md
   docs/
+    adr/
+      001-spfx-over-iframe.md      # ADR: SPFx vs iframe embedding
+      002-health-check-architecture.md  # ADR: PowerShell health check pipeline
+      003-token-caching-strategy.md     # ADR: Client-side token caching
     troubleshooting-playbook.md    # 13-issue troubleshooting guide
     diagrams/
       architecture.md              # System architecture (Mermaid)
@@ -357,6 +431,7 @@ sharepoint-powerbi-dashboard/
       error-recovery.md            # Error recovery decision tree
       deployment-pipeline.md       # Deployment stages flowchart
     screenshots/
+      hero-dashboard.html          # Dark-theme hero dashboard with animations
       dashboard-embedded.html      # Embedded report mockup
       health-report.html           # Health check report mockup
       property-pane.html           # Property pane configuration mockup
@@ -374,6 +449,16 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites, setup instructions
 ---
 
 ## Changelog
+
+### v1.3.0
+
+- Added `PowerBIService.ts` singleton service layer with AAD token caching (55-min proactive refresh), generic `retryAsync<T>` with exponential backoff, typed event emitter, and fluent `EmbedConfigBuilder`
+- Added `types.ts` comprehensive type system with branded types (`ReportId`, `WorkspaceId`, `DatasetId`), discriminated union `ReportState`, custom error hierarchy (`PowerBIAuthError`, `PowerBIEmbedError`, `PowerBIConfigError`), type guards, and utility types (`DeepPartial<T>`, `Mutable<T>`, `RequireAtLeastOne<T>`)
+- Added `ErrorBoundary.tsx` React error boundary with professional error UI, retry logic (up to 3 attempts), and "contact support" escalation
+- Added `ConfigValidator.ts` web part configuration validator with GUID format checks, embed URL validation, and field-level error messages
+- Added Architecture Decision Records: [ADR 001](docs/adr/001-spfx-over-iframe.md) (SPFx vs iframe), [ADR 002](docs/adr/002-health-check-architecture.md) (health check pipeline), [ADR 003](docs/adr/003-token-caching-strategy.md) (token caching strategy)
+- Added `hero-dashboard.html` dark-theme interactive mockup with animated KPI cards, SVG trend chart, donut chart, heat map, incident table, and glassmorphism filter panel
+- Updated architecture diagram to reflect service layer; added ADR, Advanced Patterns, and Code Quality sections to README
 
 ### v1.2.0
 
