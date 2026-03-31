@@ -1,0 +1,291 @@
+@import '~office-ui-fabric-react/dist/sass/References.scss';
+
+$color-primary: $ms-color-themePrimary;
+$color-success: #107c10;
+$color-error: #d13438;
+$color-neutral: #605e5c;
+$radius: 4px;
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+
+// ---------------------------------------------------------------------------
+// Panel container
+// ---------------------------------------------------------------------------
+.filterPanel {
+  border: 1px solid $ms-color-neutralLight;
+  border-radius: $radius;
+  background: $ms-color-white;
+  margin-bottom: $spacing-md;
+  overflow: hidden;
+
+  &.collapsed {
+    .body {
+      display: none;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Toggle header
+// ---------------------------------------------------------------------------
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  background: $ms-color-neutralLighter;
+  cursor: pointer;
+  font-size: $ms-font-size-m;
+  font-weight: 600;
+  color: $ms-color-neutralPrimary;
+  text-align: left;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $ms-color-neutralLight;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: -2px;
+  }
+}
+
+.toggleIcon {
+  font-size: $ms-font-size-s;
+  color: $color-neutral;
+  flex-shrink: 0;
+}
+
+.toggleLabel {
+  flex: 1;
+}
+
+// ---------------------------------------------------------------------------
+// Panel body
+// ---------------------------------------------------------------------------
+.body {
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  border-top: 1px solid $ms-color-neutralLight;
+}
+
+// ---------------------------------------------------------------------------
+// Filter controls
+// ---------------------------------------------------------------------------
+.filterControl {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.filterLabel {
+  font-size: $ms-font-size-s;
+  font-weight: 600;
+  color: $ms-color-neutralPrimary;
+}
+
+.dropdown {
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  font-size: $ms-font-size-s;
+  min-height: 80px;
+  background: $ms-color-white;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 1px $color-primary;
+  }
+}
+
+.advancedRow {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+.operatorSelect {
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  font-size: $ms-font-size-s;
+  background: $ms-color-white;
+  flex: 0 0 auto;
+  min-width: 160px;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 1px $color-primary;
+  }
+}
+
+.textInput {
+  flex: 1;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  font-size: $ms-font-size-s;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 1px $color-primary;
+  }
+
+  &::placeholder {
+    color: $ms-color-neutralTertiary;
+  }
+}
+
+.dateRow {
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-end;
+}
+
+.dateField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.dateLabel {
+  font-size: $ms-font-size-xs;
+  color: $color-neutral;
+}
+
+.dateInput {
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  font-size: $ms-font-size-s;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $color-primary;
+    box-shadow: 0 0 0 1px $color-primary;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error message
+// ---------------------------------------------------------------------------
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: rgba($color-error, 0.08);
+  border: 1px solid rgba($color-error, 0.3);
+  border-radius: $radius;
+  color: $color-error;
+  font-size: $ms-font-size-s;
+}
+
+.dismissError {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: $color-error;
+  font-size: $ms-font-size-l;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Action buttons
+// ---------------------------------------------------------------------------
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1px solid $ms-color-neutralLight;
+}
+
+.applyButton {
+  padding: $spacing-sm $spacing-lg;
+  border: none;
+  border-radius: $radius;
+  background: $color-primary;
+  color: $ms-color-white;
+  font-size: $ms-font-size-s;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: darken($color-primary, 8%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.clearButton {
+  padding: $spacing-sm $spacing-lg;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  background: $ms-color-white;
+  color: $ms-color-neutralPrimary;
+  font-size: $ms-font-size-s;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $ms-color-neutralLighter;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Responsive
+// ---------------------------------------------------------------------------
+@media (max-width: 640px) {
+  .advancedRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .operatorSelect {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .dateRow {
+    flex-direction: column;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .applyButton,
+  .clearButton {
+    width: 100%;
+    text-align: center;
+  }
+}

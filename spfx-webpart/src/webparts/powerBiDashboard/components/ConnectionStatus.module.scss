@@ -1,0 +1,173 @@
+@import '~office-ui-fabric-react/dist/sass/References.scss';
+
+$color-primary: $ms-color-themePrimary;
+$color-success: #107c10;
+$color-warning: #ffb900;
+$color-error: #d13438;
+$color-orange: #ca5010;
+$color-neutral: #605e5c;
+$radius: 4px;
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+
+// ---------------------------------------------------------------------------
+// Container
+// ---------------------------------------------------------------------------
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $ms-color-neutralLighter;
+  border-bottom: 1px solid $ms-color-neutralLight;
+  font-size: $ms-font-size-s;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+// ---------------------------------------------------------------------------
+// Status dot
+// ---------------------------------------------------------------------------
+.statusDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connected {
+  background-color: $color-success;
+}
+
+.connecting {
+  background-color: $color-warning;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.reconnecting {
+  background-color: $color-orange;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.disconnected {
+  background-color: $color-error;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// ---------------------------------------------------------------------------
+// Labels
+// ---------------------------------------------------------------------------
+.statusLabel {
+  font-weight: 600;
+  color: $ms-color-neutralPrimary;
+}
+
+.reconnectInfo {
+  font-size: $ms-font-size-xs;
+  color: $color-orange;
+  font-style: italic;
+}
+
+.lastRefreshed {
+  color: $color-neutral;
+  margin-left: auto;
+}
+
+// ---------------------------------------------------------------------------
+// Token countdown
+// ---------------------------------------------------------------------------
+.tokenCountdown {
+  padding: 2px $spacing-sm;
+  border-radius: $radius;
+  background: $ms-color-neutralLight;
+  color: $color-neutral;
+  font-size: $ms-font-size-xs;
+  font-family: monospace;
+}
+
+.tokenWarning {
+  background: rgba($color-warning, 0.15);
+  color: darken($color-warning, 20%);
+  font-weight: 600;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.tokenExpired {
+  padding: 2px $spacing-sm;
+  border-radius: $radius;
+  background: rgba($color-error, 0.1);
+  color: $color-error;
+  font-size: $ms-font-size-xs;
+  font-weight: 600;
+}
+
+// ---------------------------------------------------------------------------
+// Refresh button
+// ---------------------------------------------------------------------------
+.refreshButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border: 1px solid $ms-color-neutralTertiaryAlt;
+  border-radius: $radius;
+  background: $ms-color-white;
+  color: $color-primary;
+  font-size: $ms-font-size-s;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: $ms-color-neutralLighter;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 1px;
+  }
+}
+
+.refreshIcon {
+  display: inline-block;
+  font-size: $ms-font-size-m;
+  line-height: 1;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ---------------------------------------------------------------------------
+// Responsive
+// ---------------------------------------------------------------------------
+@media (max-width: 640px) {
+  .connectionStatus {
+    gap: $spacing-xs;
+  }
+
+  .lastRefreshed {
+    margin-left: 0;
+    width: 100%;
+    order: 10;
+  }
+
+  .tokenCountdown,
+  .tokenExpired {
+    order: 5;
+  }
+}
