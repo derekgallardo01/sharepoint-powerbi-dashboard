@@ -8,6 +8,8 @@
 
 A production-ready SharePoint Framework (SPFx) web part that embeds Power BI reports with dynamic filtering, paired with PowerShell health-check scripts and Power Automate alert flows for end-to-end operational monitoring.
 
+![SharePoint Power BI Dashboard Hero](docs/screenshots/hero-dashboard.png)
+
 > **[View the interactive dashboard mockup](docs/screenshots/hero-dashboard.html)** -- open in your browser to see the full dark-theme SharePoint experience with animated KPI cards, trend charts, heat maps, and incident tables.
 
 ---
@@ -233,12 +235,21 @@ Multiple values for the same filter are comma-separated: `pbi_Sales_Region=West,
 
 ### Screenshots
 
-Open the following HTML files in your browser to see interactive mockups of the web part:
+| | |
+|---|---|
+| ![Dashboard Embedded View](docs/screenshots/dashboard-embedded.png) | ![Health Check Report](docs/screenshots/health-report.png) |
+| *Dashboard Embedded View* | *Health Check Report* |
+| ![Property Pane Configuration](docs/screenshots/property-pane.png) | ![Error and Loading States](docs/screenshots/error-state.png) |
+| *Property Pane Configuration* | *Error and Loading States* |
+
+<details>
+<summary>Interactive HTML mockups (open in browser)</summary>
 
 - **[Hero Dashboard](docs/screenshots/hero-dashboard.html)** -- Full dark-theme SharePoint page with animated KPI cards, SVG trend chart with gradient fill, donut chart, service health heat map, incident table, and glassmorphism filter panel
 - **[Dashboard Embedded View](docs/screenshots/dashboard-embedded.html)** -- Power BI report embedded in a SharePoint page with KPI cards, bar chart, donut chart, incident table, and filter pane
 - **[Property Pane Configuration](docs/screenshots/property-pane.html)** -- SPFx property pane showing Report ID, Workspace ID, toggle switches, and connection status
 - **[Error and Loading States](docs/screenshots/error-state.html)** -- Loading spinner, authentication error, and "no report configured" states side by side
+</details>
 
 ---
 
