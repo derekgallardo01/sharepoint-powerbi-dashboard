@@ -146,7 +146,8 @@ sequenceDiagram
 - Secure AAD-based token acquisition (user-owns-data pattern)
 - Property pane for workspace ID, report ID, and display options
 - Dynamic filtering via URL query parameters (`?pbi_Table_Column=value`)
-- Live connection-status indicator with manual refresh
+- **Filter Panel** -- reusable filter panel with basic (dropdown), advanced (conditions), and date range (calendar) filters; persists state to URL query parameters
+- **Connection Status Indicator** -- real-time connection state (Connecting/Connected/Disconnected/Reconnecting) with exponential-backoff auto-reconnect, token expiry countdown, and manual refresh
 - Responsive layout with loading states and error handling
 - Support for SharePoint pages, Teams personal apps, and Teams tabs
 
@@ -156,6 +157,7 @@ sequenceDiagram
 - **Permissions Audit** -- workspace access list, dataset permissions, and RLS roles
 - **Embed Config Validation** -- GUID checks, token acquisition, API permission tests
 - **Dataset Size** -- compare dataset sizes against Pro (1 GB) and Premium (10 GB) limits with configurable warning thresholds
+- **Usage Metrics** -- report view counts, unique viewers, dataset refresh durations, success rates, and workspace storage utilization with Table/CSV/JSON output
 - **Master Runner** -- orchestrates all checks and produces a colour-coded HTML report
 
 ### Power Automate Flows
@@ -260,6 +262,7 @@ An HTML report is saved to `health-checks/reports/`. Open **[Health Report Previ
 | `Test-PowerBIPermissions.ps1` | Audit workspace members, dataset permissions, RLS |
 | `Test-PowerBIEmbedConfig.ps1` | Validate embed configuration and token generation |
 | `Test-PowerBIDatasetSize.ps1` | Check dataset sizes against Pro and Premium limits |
+| `Get-PowerBIUsageMetrics.ps1` | Report views, unique viewers, refresh durations, storage utilization |
 
 Each script supports `-Help` via standard PowerShell `Get-Help`.
 
@@ -322,6 +325,10 @@ sharepoint-powerbi-dashboard/
         IPowerBiDashboardProps.ts  # Props and state interfaces
         PowerBiDashboard.tsx       # Main React component
         PowerBiDashboard.module.scss
+        FilterPanel.tsx            # Reusable filter panel (basic/advanced/date range)
+        FilterPanel.module.scss
+        ConnectionStatus.tsx       # Connection status indicator with auto-reconnect
+        ConnectionStatus.module.scss
       PowerBiDashboardWebPart.ts   # SPFx web part entry point
       PowerBiDashboardWebPart.manifest.json
     package.json
@@ -334,6 +341,7 @@ sharepoint-powerbi-dashboard/
     Test-PowerBIPermissions.ps1
     Test-PowerBIEmbedConfig.ps1
     Test-PowerBIDatasetSize.ps1    # Dataset size vs Pro/Premium limits
+    Get-PowerBIUsageMetrics.ps1    # Usage analytics (views, refreshes, storage)
     reports/                       # Generated HTML reports (git-ignored)
   power-automate-flows/
     refresh-failure-alert.json
@@ -366,6 +374,12 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for prerequisites, setup instructions
 ---
 
 ## Changelog
+
+### v1.2.0
+
+- Added `FilterPanel.tsx` reusable filter panel component with basic dropdown, advanced condition, and date range filter types; persists filter state to URL query parameters
+- Added `ConnectionStatus.tsx` connection status indicator with real-time state display (Connecting/Connected/Disconnected/Reconnecting), exponential-backoff auto-reconnect, token expiry countdown with 5-minute warning, and manual refresh
+- Added `Get-PowerBIUsageMetrics.ps1` usage analytics script for report view counts, unique viewers, dataset refresh durations and success rates, workspace storage utilization; supports Table/CSV/JSON output formats
 
 ### v1.1.0
 
